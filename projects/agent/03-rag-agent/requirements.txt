@@ -1,0 +1,14 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic>=2.5.0,<3.0.0
+pydantic-core>=2.14.0,<3.0.0
+pydantic-settings>=2.1.0
+python-dotenv==1.0.0
+httpx==0.25.2
+numpy>=1.21.0,<2.0.0
+chromadb>=0.4.24
+openai>=1.0.0
+PyPDF2==3.0.1
+python-multipart==0.0.6
+tqdm==4.66.1
+
