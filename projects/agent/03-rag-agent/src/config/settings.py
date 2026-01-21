@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     # 文档处理配置
     document_dir: str = Field(default="./documents", env="DOCUMENT_DIR")
     document_extensions: list = Field(
-        default=[".md", ".txt", ".pdf"],
+        default=[".md", ".txt", ".pdf",".xlsx",".csv"],
         env="DOCUMENT_EXTENSIONS"
     )
 

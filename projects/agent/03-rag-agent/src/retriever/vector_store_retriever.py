@@ -38,6 +38,7 @@ class VectorStoreRetriever(Retriever):
         
         # 生成查询的embedding
         query_embedding = self.embedding_client.embed_text(query)
+        print("生成查询向量：",query_embedding)
         
         # 在向量数据库中搜索（返回 List[Tuple[Document, float]]）
         results = self.vector_store.search_by_vector(

@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
     os.makedirs(settings.vector_store_path, exist_ok=True)
     os.makedirs(settings.document_dir, exist_ok=True)
     
+    print("settings.vector_store_path:", settings.vector_store_path)
     logger.info("RAG Agent 应用启动成功（使用 Chroma 向量数据库）")
     yield
     

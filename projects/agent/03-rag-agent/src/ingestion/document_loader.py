@@ -9,6 +9,11 @@ try:
 except ImportError:
     print("Warning: PyPDF2 not installed. PDF support will be limited.")
 
+try:
+    import pandas as pd
+except ImportError:
+    print("Warning: pandas not installed. Excel/CSV support will be disabled.")
+    pd = None
 
 class SimpleDocumentLoader(DocumentLoader):
     """简单文档加载器，支持txt、md和pdf格式"""
@@ -19,7 +24,7 @@ class SimpleDocumentLoader(DocumentLoader):
         Args:
             supported_extensions: 支持的文件扩展名列表
         """
-        self.supported_extensions = supported_extensions or [".txt", ".md", ".pdf"]
+        self.supported_extensions = supported_extensions or [".txt", ".md", ".pdf", ".xlsx", ".csv"]
     
     def load(self, file_path: str, **kwargs) -> Document:
         """加载单个文档
@@ -53,6 +58,14 @@ class SimpleDocumentLoader(DocumentLoader):
                 text = f.read()
         elif file_extension == ".pdf":
             text = self._load_pdf(file_path, metadata)
+        elif file_extension in [".xlsx"]:
+            if pd is None:
+                raise RuntimeError("pandas 未安装，无法加载 Excel 文件")
+            text = self._load_excel(file_path, metadata)
+        elif file_extension == ".csv":
+            if pd is None:
+                raise RuntimeError("pandas 未安装，无法加载 CSV 文件")
+            text = self._load_csv(file_path, metadata)
         
         return Document(
             text=text,
@@ -113,7 +126,48 @@ class SimpleDocumentLoader(DocumentLoader):
             return text
         except Exception as e:
             raise RuntimeError(f"PDF加载失败: {e}")
-
+    # === 新增方法：加载 Excel ===
+    def _load_excel(self, file_path: str, metadata: dict) -> str:
+        """加载 Excel 文件（.xlsx/.xls），每张工作表转为 Markdown 表格"""
+        try:
+            # 读取所有工作表
+            sheet_dict = pd.read_excel(file_path, sheet_name=None, dtype=str)
+            metadata["sheets"] = ", ".join(sheet_dict.keys())  # 例如 "Sheet1, Sheet2"
+            
+            text_parts = []
+            for sheet_name, df in sheet_dict.items():
+                if df.empty:
+                    continue
+                
+                # 将 DataFrame 转为 Markdown 表格（LLM 友好格式）
+                # 如果没有 to_markdown，回退到字符串
+                if hasattr(df, 'to_markdown'):
+                    table_str = df.to_markdown(index=False)
+                else:
+                    table_str = df.to_string(index=False)
+                
+                text_parts.append(f"## Sheet: {sheet_name}\n\n{table_str}\n")
+            
+            return "\n".join(text_parts)
+        except Exception as e:
+            raise RuntimeError(f"Excel 加载失败 ({file_path}): {e}")
+    
+    # === 新增方法：加载 CSV ===
+    def _load_csv(self, file_path: str, metadata: dict) -> str:
+        """加载 CSV 文件"""
+        try:
+            df = pd.read_csv(file_path, dtype=str)
+            if df.empty:
+                return ""
+            
+            if hasattr(df, 'to_markdown'):
+                table_str = df.to_markdown(index=False)
+            else:
+                table_str = df.to_string(index=False)
+            
+            return f"## CSV File: {os.path.basename(file_path)}\n\n{table_str}"
+        except Exception as e:
+            raise RuntimeError(f"CSV 加载失败 ({file_path}): {e}")
 
 # 为兼容性，创建别名
 TextDocumentLoader = SimpleDocumentLoader

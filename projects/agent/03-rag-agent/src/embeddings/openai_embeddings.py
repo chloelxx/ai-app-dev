@@ -60,6 +60,7 @@ class OpenAIEmbeddingClient(EmbeddingClient):
         Returns:
             List[float]: Embedding向量
         """
+        print("生成嵌入查询文本内容:", text)
         try:
             # 去除文本中的多余空白字符
             text = " ".join(text.strip().split())
